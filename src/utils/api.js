@@ -1,13 +1,27 @@
 import axios from 'axios';
 
-const api = axios.create({ baseURL: '/api', timeout: 15000 });
+// Local dev  → Vite proxy forwards /api → localhost:5000
+// Production → VITE_API_URL points to your Render backend
+const BASE_URL = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : '/api';
+
+const api = axios.create({
+  baseURL: BASE_URL,
+  timeout: 15000,
+  headers: { 'Content-Type': 'application/json' },
+});
 
 // Attach JWT from Zustand persisted store
 api.interceptors.request.use((config) => {
   const raw = localStorage.getItem('auth');
   if (raw) {
-    const { state } = JSON.parse(raw);
-    if (state?.token) config.headers.Authorization = `Bearer ${state.token}`;
+    try {
+      const { state } = JSON.parse(raw);
+      if (state?.token) config.headers.Authorization = `Bearer ${state.token}`;
+    } catch {
+      // corrupted storage — ignore
+    }
   }
   return config;
 });
