@@ -13,7 +13,10 @@ export default function Tasks() {
   return (
     <div>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+      <div style={{ 
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+        gap: 16, marginBottom: 24 
+      }}>
         <div>
           <h2 style={{ fontWeight: 800, fontSize: 22, margin: 0, letterSpacing: '-0.03em' }}>Task Planner</h2>
           <p style={{ color: 'var(--text-muted)', margin: '4px 0 0', fontSize: 14 }}>
@@ -22,7 +25,10 @@ export default function Tasks() {
         </div>
 
         {/* Period tabs */}
-        <div style={{ display: 'flex', background: 'var(--bg-card)', borderRadius: 12, padding: 4, gap: 2 }}>
+        <div style={{ 
+          display: 'flex', background: 'var(--bg-card)', borderRadius: 12, 
+          padding: 4, gap: 2, alignSelf: 'flex-start' 
+        }}>
           {TABS.map(({ value, label }) => (
             <button
               key={value}

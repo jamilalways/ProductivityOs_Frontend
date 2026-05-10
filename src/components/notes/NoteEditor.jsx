@@ -4,6 +4,7 @@ import { Plus, Trash2, Pin, PinOff, Eye, Edit3, Search } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useNoteStore } from '../../store/noteStore';
 import { formatDate } from '../../utils/dateUtils';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
 import toast from 'react-hot-toast';
 
 const TYPES = [
@@ -159,6 +160,8 @@ export default function NoteEditor() {
   const [filter, setFilter]     = useState('all');
   const [showForm, setShowForm] = useState(false);
   const [newNote, setNewNote]   = useState({ title: '', type: 'learning', content: '', problem: '', solution: '', tags: [] });
+  
+  const isMobile = useBreakpoint(768);
 
   useEffect(() => { fetchNotes(); }, []);
 
@@ -188,72 +191,93 @@ export default function NoteEditor() {
   };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 20, height: 'calc(100vh - 160px)' }}>
+    <div style={{ 
+      display: isMobile ? 'block' : 'grid', 
+      gridTemplateColumns: '300px 1fr', 
+      gap: 20, 
+      height: isMobile ? 'auto' : 'calc(100vh - 160px)' 
+    }}>
       {/* ── Left panel — list ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
-        {/* Search */}
-        <div style={{ position: 'relative' }}>
-          <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-          <input className="input" style={{ paddingLeft: 34 }} value={search}
-            onChange={(e) => setSearch(e.target.value)} placeholder="Search notes…" />
-        </div>
+      {(!isMobile || !selected) && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto', height: isMobile ? 'calc(100vh - 200px)' : 'auto' }}>
+          {/* Search */}
+          <div style={{ position: 'relative' }}>
+            <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <input className="input" style={{ paddingLeft: 34 }} value={search}
+              onChange={(e) => setSearch(e.target.value)} placeholder="Search notes…" />
+          </div>
 
-        {/* Filter + New */}
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          <select className="input" style={{ flex: 1, fontSize: 12 }} value={filter} onChange={(e) => setFilter(e.target.value)}>
-            <option value="all">All Notes</option>
-            {TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-          </select>
-          <button className="btn-primary" style={{ padding: '9px 12px', flexShrink: 0 }} onClick={() => setShowForm(true)}>
-            <Plus size={14} />
-          </button>
-        </div>
+          {/* Filter + New */}
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <select className="input" style={{ flex: 1, fontSize: 12 }} value={filter} onChange={(e) => setFilter(e.target.value)}>
+              <option value="all">All Notes</option>
+              {TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+            <button className="btn-primary" style={{ padding: '9px 12px', flexShrink: 0 }} onClick={() => setShowForm(true)}>
+              <Plus size={14} />
+            </button>
+          </div>
 
-        {/* Quick create */}
-        <AnimatePresence>
-          {showForm && (
-            <motion.div className="card" style={{ padding: '16px' }}
-              initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-              <input className="input" style={{ marginBottom: 8 }} value={newNote.title}
-                onChange={(e) => setNewNote((n) => ({ ...n, title: e.target.value }))} placeholder="Note title" autoFocus />
-              <select className="input" style={{ marginBottom: 10 }} value={newNote.type}
-                onChange={(e) => setNewNote((n) => ({ ...n, type: e.target.value }))}>
-                {TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-              </select>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button className="btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={handleCreate}>Create</button>
-                <button className="btn-ghost" onClick={() => setShowForm(false)}>✕</button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Note list */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {/* Quick create */}
           <AnimatePresence>
-            {visible.map((n) => (
-              <NoteCard key={n._id} note={n} selected={selected?._id === n._id}
-                onSelect={setSelected} onDelete={handleDelete} onPin={handlePin} />
-            ))}
+            {showForm && (
+              <motion.div className="card" style={{ padding: '16px' }}
+                initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
+                <input className="input" style={{ marginBottom: 8 }} value={newNote.title}
+                  onChange={(e) => setNewNote((n) => ({ ...n, title: e.target.value }))} placeholder="Note title" autoFocus />
+                <select className="input" style={{ marginBottom: 10 }} value={newNote.type}
+                  onChange={(e) => setNewNote((n) => ({ ...n, type: e.target.value }))}>
+                  {TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button className="btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={handleCreate}>Create</button>
+                  <button className="btn-ghost" onClick={() => setShowForm(false)}>✕</button>
+                </div>
+              </motion.div>
+            )}
           </AnimatePresence>
-          {visible.length === 0 && (
-            <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, padding: '30px 0' }}>
-              {search ? 'No results found' : 'No notes yet'}
-            </div>
-          )}
+
+          {/* Note list */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <AnimatePresence>
+              {visible.map((n) => (
+                <NoteCard key={n._id} note={n} selected={selected?._id === n._id}
+                  onSelect={setSelected} onDelete={handleDelete} onPin={handlePin} />
+              ))}
+            </AnimatePresence>
+            {visible.length === 0 && (
+              <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, padding: '30px 0' }}>
+                {search ? 'No results found' : 'No notes yet'}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ── Right panel — editor ── */}
-      {selected ? (
-        <div className="card" style={{ padding: '22px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <NoteDetailEditor note={selected} onSave={handleSave} onClose={() => setSelected(null)} />
-        </div>
-      ) : (
-        <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
-          <div style={{ fontSize: 48 }}>📝</div>
-          <div style={{ fontWeight: 700, fontSize: 16 }}>Select a note to edit</div>
-          <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>Or create a new one from the left panel</div>
+      {(selected || !isMobile) && (
+        <div className="card" style={{ 
+          padding: '22px', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          overflow: 'hidden',
+          height: isMobile ? 'calc(100vh - 160px)' : 'auto',
+          position: isMobile ? 'fixed' : 'relative',
+          top: isMobile ? 80 : 0,
+          left: isMobile ? 16 : 0,
+          right: isMobile ? 16 : 0,
+          bottom: isMobile ? 16 : 0,
+          zIndex: isMobile ? 30 : 1,
+        }}>
+          {selected ? (
+            <NoteDetailEditor note={selected} onSave={handleSave} onClose={() => setSelected(null)} />
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12, height: '100%' }}>
+              <div style={{ fontSize: 48 }}>📝</div>
+              <div style={{ fontWeight: 700, fontSize: 16 }}>Select a note to edit</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>Or create a new one from the left panel</div>
+            </div>
+          )}
         </div>
       )}
     </div>

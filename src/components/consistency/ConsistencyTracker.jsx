@@ -48,25 +48,28 @@ function StreakCalendar({ completedDates = [], color }) {
           <div key={i} style={{ width: 14, textAlign: 'center', fontSize: 9, color: 'var(--text-muted)', fontWeight: 600 }}>{l}</div>
         ))}
       </div>
-      <div style={{ display: 'flex', gap: 2 }}>
-        {weeks.map((week, wi) => (
-          <div key={wi} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {week.map((day, di) => (
-              <div
-                key={di}
-                title={day && day.date instanceof Date && !isNaN(day.date) ? format(day.date, 'MMM d, yyyy') : ''}
-                className={`h-cell${day?.done ? ' done' : ''}`}
-                style={{
-                  background: !day ? 'transparent'
-                    : day.done ? color
-                    : day.isToday ? 'var(--border-strong)' : undefined,
-                  outline: day?.isToday ? `2px solid ${color}` : 'none',
-                  outlineOffset: 1,
-                }}
-              />
-            ))}
-          </div>
-        ))}
+      <div style={{ overflowX: 'auto', paddingBottom: 8, msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+        <div style={{ display: 'flex', gap: 2 }}>
+          {weeks.map((week, wi) => (
+            <div key={wi} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {week.map((day, di) => (
+                <div
+                  key={di}
+                  title={day && day.date instanceof Date && !isNaN(day.date) ? format(day.date, 'MMM d, yyyy') : ''}
+                  className={`h-cell${day?.done ? ' done' : ''}`}
+                  style={{
+                    background: !day ? 'transparent'
+                      : day.done ? color
+                      : day.isToday ? 'var(--border-strong)' : undefined,
+                    outline: day?.isToday ? `2px solid ${color}` : 'none',
+                    outlineOffset: 1,
+                    flexShrink: 0
+                  }}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 8, fontSize: 10, color: 'var(--text-muted)' }}>
         <span>Less</span>
@@ -87,7 +90,10 @@ function HabitCard({ habit, onCheckIn, onDelete }) {
     <motion.div className="card" style={{ padding: '20px' }}
       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
       {/* Top row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+      <div style={{ 
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+        gap: 16, marginBottom: 16 
+      }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{
             width: 44, height: 44, borderRadius: 12, flexShrink: 0,
@@ -108,7 +114,7 @@ function HabitCard({ habit, onCheckIn, onDelete }) {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, alignSelf: 'flex-start' }}>
           <motion.button
             whileTap={{ scale: 0.93 }}
             onClick={() => !doneToday && onCheckIn(habit._id)}
@@ -224,14 +230,17 @@ export default function ConsistencyTracker() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+      <div style={{ 
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+        gap: 16, marginBottom: 20 
+      }}>
         <div>
           <h2 style={{ fontWeight: 800, fontSize: 22, margin: 0, letterSpacing: '-0.03em' }}>Consistency</h2>
           <p style={{ color: 'var(--text-muted)', margin: '4px 0 0', fontSize: 14 }}>
             {doneCount} / {habits.length} habits done today
           </p>
         </div>
-        <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
+        <button className="btn-primary" onClick={() => setShowForm(!showForm)} style={{ alignSelf: 'flex-start' }}>
           <Plus size={15} /> New Habit
         </button>
       </div>

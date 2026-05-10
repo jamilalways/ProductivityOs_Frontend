@@ -177,7 +177,7 @@ export default function TaskBoard({ plannerType = 'daily' }) {
     <DndContext sensors={sensors} collisionDetection={closestCenter}
       onDragStart={({ active }) => setActiveId(active.id)}
       onDragEnd={handleDragEnd}>
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
+      <div className="grid-3">
         {COLS.map(({ id, label, color, icon: Icon }) => {
           const colTasks = col(id);
           return (

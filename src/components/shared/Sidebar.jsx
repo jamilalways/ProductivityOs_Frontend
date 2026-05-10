@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   LayoutDashboard, Target, CheckSquare, Zap,
-  Calendar, BookOpen, BarChart3, Settings, LogOut, Flame, Star,
+  Calendar, BookOpen, BarChart3, Settings, LogOut, Flame, Star, X
 } from 'lucide-react';
 import { useAuthStore }  from '../../store/authStore';
 import { levelProgress, levelTitle, calcLevel } from '../../utils/xp';
@@ -17,7 +17,7 @@ const NAV = [
   { to: '/analytics',   icon: BarChart3,       label: 'Analytics' },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }) {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
 
@@ -27,11 +27,26 @@ export default function Sidebar() {
 
   return (
     <motion.aside
-      className="sidebar"
-      initial={{ x: -16, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
+      className={`sidebar ${isOpen ? 'open' : ''}`}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
+      {/* ── Close Button (Mobile only) ── */}
+      <button 
+        onClick={onClose}
+        style={{
+          position: 'absolute', top: 12, right: 12,
+          background: 'none', border: 'none', color: 'var(--text-muted)',
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '10px', zIndex: 50, pointerEvents: 'auto'
+        }}
+        className="md:hidden"
+      >
+        <X size={20} />
+      </button>
+
+      {/* ── Logo ── */}
       {/* ── Logo ── */}
       <div style={{ padding: '20px 16px 16px', borderBottom: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

@@ -176,7 +176,7 @@ function GoalForm({ onClose, onCreated }) {
     >
       <div style={{ fontWeight:700, fontSize:16, marginBottom:18 }}>Create New Goal</div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:14 }}>
+      <div className="grid-2" style={{ marginBottom:14 }}>
         <div>
           <label style={{ display:'block', fontSize:12, fontWeight:600, marginBottom:6, color:'var(--text-muted)' }}>TITLE *</label>
           <input className="input" value={form.title} onChange={(e) => set('title', e.target.value)} placeholder="Goal title" />
@@ -195,7 +195,7 @@ function GoalForm({ onClose, onCreated }) {
           onChange={(e) => set('description', e.target.value)} placeholder="What does achieving this look like?" />
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:14 }}>
+      <div className="grid-2" style={{ marginBottom:14 }}>
         <div>
           <label style={{ display:'block', fontSize:12, fontWeight:600, marginBottom:6, color:'var(--text-muted)' }}>DEADLINE *</label>
           <input className="input" type="date" value={form.deadline} onChange={(e) => set('deadline', e.target.value)} />
@@ -275,14 +275,17 @@ export default function GoalManager() {
   return (
     <div>
       {/* Header */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+      <div style={{ 
+        display:'flex', alignItems:'center', justifyContent:'space-between', 
+        gap:16, marginBottom:20 
+      }}>
         <div>
           <h2 style={{ fontWeight:800, fontSize:22, margin:0, letterSpacing:'-0.03em' }}>Goals</h2>
           <p style={{ color:'var(--text-muted)', margin:'4px 0 0', fontSize:14 }}>
             {goals.filter(g=>g.status==='active').length} active · {goals.filter(g=>g.status==='completed').length} completed
           </p>
         </div>
-        <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
+        <button className="btn-primary" onClick={() => setShowForm(!showForm)} style={{ alignSelf: 'flex-start' }}>
           <Plus size={15} /> New Goal
         </button>
       </div>
@@ -305,7 +308,7 @@ export default function GoalManager() {
 
       <AnimatePresence>{showForm && <GoalForm onClose={() => setShowForm(false)} onCreated={() => setShowForm(false)} />}</AnimatePresence>
 
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(360px,1fr))', gap:16 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(min(100%, 340px), 1fr))', gap:16 }}>
         <AnimatePresence>
           {filtered.map((g) => (
             <GoalCard key={g._id} goal={g} onDelete={handleDelete} onUpdate={handleUpdate} />

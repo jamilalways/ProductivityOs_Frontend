@@ -13,23 +13,24 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor:   ['react', 'react-dom', 'react-router-dom'],
-          charts:   ['recharts'],
-          motion:   ['framer-motion'],
-          dnd:      ['@dnd-kit/core', '@dnd-kit/sortable'],
-          store:    ['zustand'],
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          charts: ['recharts'],
+          motion: ['framer-motion'],
+          dnd:    ['@dnd-kit/core', '@dnd-kit/sortable'],
+          store:  ['zustand'],
         },
       },
     },
   },
-  // Proxy only used in local development (mode === 'development')
-  server: mode === 'development' ? {
+  server: {
     port: 5173,
+    strictPort: false, // allow fallback to 5174, 5175 etc automatically
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://127.0.0.1:5001',
         changeOrigin: true,
+        secure: false,
       },
     },
-  } : {},
+  },
 }));

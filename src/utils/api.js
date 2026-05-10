@@ -1,7 +1,8 @@
 import axios from 'axios';
 
-// Local dev  → Vite proxy forwards /api → localhost:5000
-// Production → VITE_API_URL points to your Render backend
+// Determine base URL:
+// - Production (Vercel)  → VITE_API_URL env var set in Vercel dashboard
+// - Local development    → uses Vite proxy to avoid CORS/network issues
 const BASE_URL = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL}/api`
   : '/api';
@@ -10,6 +11,7 @@ const api = axios.create({
   baseURL: BASE_URL,
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: false,
 });
 
 // Attach JWT from Zustand persisted store

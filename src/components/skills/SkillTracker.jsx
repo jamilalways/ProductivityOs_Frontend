@@ -88,7 +88,7 @@ function SkillCard({ skill, onDelete, onToggleTopic }) {
           {skill.icon}
         </div>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: 1, minWidth: 0, width: '100%' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
             <span style={{ fontWeight: 700, fontSize: 15 }}>{skill.name}</span>
             <span style={{
@@ -117,7 +117,7 @@ function SkillCard({ skill, onDelete, onToggleTopic }) {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, alignSelf: 'flex-start' }}>
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(skill._id); }}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4 }}
@@ -204,7 +204,7 @@ function SkillForm({ onClose }) {
       initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
       <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>Create New Skill</div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+      <div className="grid-2" style={{ marginBottom: 14 }}>
         <div>
           <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--text-muted)' }}>SKILL NAME *</label>
           <input className="input" value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="e.g. Django, DSA, English Speaking" />
@@ -277,14 +277,17 @@ export default function SkillTracker() {
   return (
     <div>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+      <div style={{ 
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+        gap: 16, marginBottom: 20 
+      }}>
         <div>
           <h2 style={{ fontWeight: 800, fontSize: 22, margin: 0, letterSpacing: '-0.03em' }}>Skills</h2>
           <p style={{ color: 'var(--text-muted)', margin: '4px 0 0', fontSize: 14 }}>
             {mainSkills.length} main · {softSkills.length} soft
           </p>
         </div>
-        <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
+        <button className="btn-primary" onClick={() => setShowForm(!showForm)} style={{ alignSelf: 'flex-start' }}>
           <Plus size={15} /> New Skill
         </button>
       </div>

@@ -66,7 +66,7 @@ export default function DashboardHome() {
       </motion.div>
 
       {/* ── Stat Cards ── */}
-      <motion.div variants={item} style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))', gap:14, marginBottom:20 }}>
+      <motion.div variants={item} className="grid-4" style={{ marginBottom:20, gap:14 }}>
         {STATS.map(({ label, value, icon:Icon, color, bg }) => (
           <div key={label} className="card" style={{ padding:'18px' }}>
             <div style={{ width:36, height:36, borderRadius:10, background:bg, display:'flex', alignItems:'center', justifyContent:'center', marginBottom:14 }}>
@@ -79,7 +79,7 @@ export default function DashboardHome() {
       </motion.div>
 
       {/* ── Charts ── */}
-      <motion.div variants={item} style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:20 }}>
+      <motion.div variants={item} className="grid-2" style={{ marginBottom:20 }}>
         <div className="card" style={{ padding:'20px 16px' }}>
           <div style={{ fontWeight:700, fontSize:15, marginBottom:4 }}>Weekly Tasks</div>
           <div style={{ fontSize:12, color:'var(--text-muted)', marginBottom:16 }}>Completed per day</div>
@@ -117,7 +117,7 @@ export default function DashboardHome() {
       </motion.div>
 
       {/* ── Skills + Tasks ── */}
-      <motion.div variants={item} style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:16 }}>
+      <motion.div variants={item} className="grid-2" style={{ marginBottom:16 }}>
         {/* Skills */}
         <div className="card" style={{ padding:'20px' }}>
           <div style={{ fontWeight:700, fontSize:15, marginBottom:4 }}>Skill Progress</div>
@@ -185,11 +185,10 @@ export default function DashboardHome() {
 
       {/* ── Level Banner ── */}
       <motion.div variants={item}>
-        <div className="card" style={{
+        <div className="card flex flex-col md:flex-row items-start md:items-center gap-4" style={{
           padding:'18px 22px',
           background:'linear-gradient(135deg,rgba(139,92,246,0.08),rgba(6,182,212,0.08))',
           border:'1px solid rgba(139,92,246,0.2)',
-          display:'flex', alignItems:'center', gap:16,
         }}>
           <div style={{
             width:50, height:50, borderRadius:14, flexShrink:0,
@@ -211,7 +210,7 @@ export default function DashboardHome() {
               />
             </div>
           </div>
-          <div style={{ textAlign:'right', flexShrink:0 }}>
+          <div className="text-left md:text-right w-full md:w-auto" style={{ flexShrink:0 }}>
             <div style={{ fontSize:28, fontWeight:800, color:'#f59e0b' }}>{user?.streak ?? 0}</div>
             <div style={{ fontSize:12, color:'var(--text-muted)' }}>day streak 🔥</div>
           </div>

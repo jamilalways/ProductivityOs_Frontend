@@ -8,6 +8,7 @@ import { TrendingUp, Zap, CheckSquare, Flame, Target, Trophy } from 'lucide-reac
 import api from '../../utils/api';
 import { useAuthStore } from '../../store/authStore';
 import { levelTitle, calcLevel } from '../../utils/xp';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
 
 const PERIOD_OPTIONS = [
   { value: 'weekly',    label: '7 Days'   },
@@ -33,6 +34,7 @@ export default function AnalyticsPage() {
   const [period, setPeriod]   = useState('weekly');
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
+  const isMobile = useBreakpoint(768);
 
   useEffect(() => {
     const load = async () => {
@@ -82,25 +84,37 @@ export default function AnalyticsPage() {
   return (
     <motion.div variants={stagger} initial="hidden" animate="show">
       {/* Header */}
-      <motion.div variants={item} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+      <motion.div variants={item} style={{ 
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+        marginBottom: 24, gap: 16 
+      }}>
         <div>
           <h2 style={{ fontWeight: 800, fontSize: 22, margin: 0, letterSpacing: '-0.03em' }}>Analytics</h2>
           <p style={{ color: 'var(--text-muted)', margin: '4px 0 0', fontSize: 14 }}>Your productivity at a glance</p>
         </div>
-        <div style={{ display: 'flex', background: 'var(--bg-card)', borderRadius: 12, padding: 4, gap: 2 }}>
+        <div style={{ 
+          display: 'flex', background: 'var(--bg-card)', borderRadius: 12, padding: 4, gap: 2,
+          maxWidth: '100%', overflowX: 'auto', alignSelf: 'flex-start'
+        }}>
           {PERIOD_OPTIONS.map(({ value, label }) => (
             <button key={value} onClick={() => setPeriod(value)} style={{
               padding: '7px 16px', borderRadius: 9, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
               background: period === value ? 'var(--accent-violet)' : 'transparent',
               color:      period === value ? '#fff' : 'var(--text-secondary)',
               transition: 'all 0.2s',
+              whiteSpace: 'nowrap'
             }}>{label}</button>
           ))}
         </div>
       </motion.div>
 
       {/* Stat Cards */}
-      <motion.div variants={item} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 14, marginBottom: 20 }}>
+      <motion.div variants={item} style={{ 
+        display: 'grid', 
+        gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit,minmax(180px,1fr))', 
+        gap: 14, 
+        marginBottom: 20 
+      }}>
         {STAT_CARDS.map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="card" style={{ padding: '18px' }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, background: `${color}18`,
@@ -114,12 +128,12 @@ export default function AnalyticsPage() {
       </motion.div>
 
       {/* Charts row 1 */}
-      <motion.div variants={item} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+      <motion.div variants={item} className="grid-2" style={{ marginBottom: 16 }}>
         {/* Tasks over time */}
         <div className="card" style={{ padding: '20px 16px' }}>
           <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Tasks Completed</div>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Daily completions over period</div>
-          <ResponsiveContainer width="100%" height={180}>
+          <ResponsiveContainer width="100%" height={isMobile ? 150 : 180}>
             <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">
@@ -140,7 +154,7 @@ export default function AnalyticsPage() {
         <div className="card" style={{ padding: '20px 16px' }}>
           <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>XP Earned</div>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Experience points per day</div>
-          <ResponsiveContainer width="100%" height={180}>
+          <ResponsiveContainer width="100%" height={isMobile ? 150 : 180}>
             <BarChart data={chartData} barSize={16}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
               <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
@@ -153,12 +167,17 @@ export default function AnalyticsPage() {
       </motion.div>
 
       {/* Charts row 2 */}
-      <motion.div variants={item} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginBottom: 16 }}>
+      <motion.div variants={item} style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 400px), 1fr))', 
+        gap: 16, 
+        marginBottom: 16 
+      }}>
         {/* Productivity score */}
         <div className="card" style={{ padding: '20px 16px' }}>
           <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Productivity Score</div>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Daily score (0–100)</div>
-          <ResponsiveContainer width="100%" height={180}>
+          <ResponsiveContainer width="100%" height={isMobile ? 150 : 180}>
             <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
@@ -211,7 +230,7 @@ export default function AnalyticsPage() {
           display: 'flex', alignItems: 'center', gap: 20,
         }}>
           <Trophy size={36} style={{ color: '#f59e0b', flexShrink: 0 }} />
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, width: '100%' }}>
             <div style={{ fontWeight: 800, fontSize: 18 }}>{levelTitle(level)}</div>
             <div style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 10 }}>
               Level {level} · {user?.xp ?? 0} total XP · {summary?.longestStreak ?? user?.longestStreak ?? 0} day best streak
@@ -224,7 +243,7 @@ export default function AnalyticsPage() {
               />
             </div>
           </div>
-          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div style={{ textAlign: isMobile ? 'left' : 'right', flexShrink: 0, width: isMobile ? 'auto' : '100%' }} className="md:flex md:items-center md:justify-between">
             <div style={{ fontSize: 32, fontWeight: 800, color: '#f59e0b' }}>{user?.streak ?? 0}🔥</div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>current streak</div>
           </div>

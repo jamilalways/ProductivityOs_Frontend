@@ -1,20 +1,38 @@
 import { useState } from 'react';
-import { Bell, Sun, Moon } from 'lucide-react';
+import { Bell, Sun, Moon, Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useThemeStore }       from '../../store/themeStore';
 import { useNotifications }    from '../../hooks/useNotifications';
 
-export default function Header() {
+export default function Header({ onMenuClick }) {
   const { theme, toggle }           = useThemeStore();
   const { notifications, count }    = useNotifications();
   const [showNotifs, setShowNotifs] = useState(false);
 
   return (
     <header style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       gap: 10, marginBottom: 28, paddingBottom: 20,
       borderBottom: '1px solid var(--border)',
     }}>
+      {/* Mobile Menu & Logo */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <button
+          onClick={onMenuClick}
+          className="md:hidden"
+          style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: 'var(--bg-card)', border: '1px solid var(--border)',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--text-secondary)',
+          }}
+        >
+          <Menu size={18} />
+        </button>
+        <div className="md:hidden" style={{ fontWeight: 800, fontSize: 16 }}>ProductivityOS</div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
       {/* Theme toggle */}
       <button
         onClick={toggle}
@@ -88,6 +106,7 @@ export default function Header() {
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
       </div>
     </header>
   );
