@@ -39,4 +39,18 @@ export const useSkillStore = create((set) => ({
     await api.delete(`/skills/${id}`);
     set((s) => ({ skills: s.skills.filter((sk) => sk._id !== id) }));
   },
+
+  reorderSkills: async (newSkillsArray) => {
+    // Optimistically update the entire skills array in state
+    set({ skills: newSkillsArray });
+    
+    // Map to payload format for backend
+    const payload = newSkillsArray.map((sk, index) => ({
+      id: sk._id,
+      order: index,
+      category: sk.category
+    }));
+    
+    await api.patch('/skills/reorder', { skills: payload });
+  },
 }));

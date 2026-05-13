@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, ChevronDown, ChevronRight, Check } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronRight, Check, GripVertical } from 'lucide-react';
+import { DndContext, closestCenter, KeyboardSensor, MouseSensor, TouchSensor, useSensor, useSensors, useDroppable } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useSkillStore } from '../../store/skillStore';
 import toast from 'react-hot-toast';
 
@@ -59,7 +62,7 @@ function TopicRow({ topic, onToggle, onDelete }) {
   );
 }
 
-function SkillCard({ skill, onDelete, onToggleTopic }) {
+function SkillCard({ skill, onDelete, onToggleTopic, dragHandleProps }) {
   const [open, setOpen] = useState(false);
   const [newTopic, setNewTopic] = useState('');
   const { updateSkill } = useSkillStore();
@@ -80,6 +83,11 @@ function SkillCard({ skill, onDelete, onToggleTopic }) {
         style={{ padding: '18px 20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}
         onClick={() => setOpen((v) => !v)}
       >
+        {dragHandleProps && (
+          <div {...dragHandleProps} style={{ cursor: 'grab', display: 'flex', alignItems: 'center', color: 'var(--text-muted)' }} onClick={(e) => e.stopPropagation()}>
+            <GripVertical size={16} />
+          </div>
+        )}
         <div style={{
           width: 44, height: 44, borderRadius: 12, flexShrink: 0,
           background: `${skill.color}20`, border: `1px solid ${skill.color}40`,
@@ -253,14 +261,66 @@ function SkillForm({ onClose }) {
   );
 }
 
+
+
+function SortableSkillCard({ skill, onDelete, onToggleTopic }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: skill._id, data: { category: skill.category } });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 999 : 1,
+    position: isDragging ? 'relative' : 'static',
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <SkillCard skill={skill} onDelete={onDelete} onToggleTopic={onToggleTopic} dragHandleProps={{...attributes, ...listeners}} />
+    </div>
+  );
+}
+
+function CategorySection({ id, title, items, handleDelete, handleToggleTopic }) {
+  const { setNodeRef } = useDroppable({ id, data: { isContainer: true } });
+  
+  return (
+     <div ref={setNodeRef} style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24, minHeight: items.length === 0 ? 80 : 0 }}>
+        {title && <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-muted)', margin: '10px 0 0' }}>{title}</h3>}
+        <SortableContext items={items.map(s => s._id)} strategy={verticalListSortingStrategy}>
+          {items.map((skill) => (
+            <SortableSkillCard key={skill._id} skill={skill} onDelete={handleDelete} onToggleTopic={handleToggleTopic} />
+          ))}
+          {items.length === 0 && (
+            <div style={{ padding: '20px', textAlign: 'center', border: '1px dashed var(--border)', borderRadius: 12, color: 'var(--text-muted)' }}>
+              Drop {title ? title.toLowerCase() : 'skills'} here
+            </div>
+          )}
+        </SortableContext>
+     </div>
+  );
+}
+
 export default function SkillTracker() {
-  const { skills, fetchSkills, deleteSkill, toggleTopic, deleteTopic } = useSkillStore();
+  const { skills, fetchSkills, deleteSkill, toggleTopic, reorderSkills } = useSkillStore();
   const [showForm, setShowForm] = useState(false);
   const [tab, setTab] = useState('all');
 
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
   useEffect(() => { fetchSkills(); }, []);
 
-  const shown = tab === 'all' ? skills : skills.filter((s) => s.category === tab);
   const mainSkills = skills.filter((s) => s.category === 'main');
   const softSkills = skills.filter((s) => s.category === 'soft');
 
@@ -272,6 +332,37 @@ export default function SkillTracker() {
   const handleDelete = async (id) => {
     await deleteSkill(id);
     toast.success('Skill deleted');
+  };
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    if (active.id !== over.id) {
+      const activeIndex = skills.findIndex((sk) => sk._id === active.id);
+      let overIndex = skills.findIndex((sk) => sk._id === over.id);
+
+      let newCategory = skills[activeIndex].category;
+      if (over.id === 'main-container') {
+         newCategory = 'main';
+         const lastMain = skills.map((s, i) => s.category === 'main' ? i : -1).filter(i => i !== -1).pop();
+         overIndex = lastMain !== undefined ? lastMain + 1 : skills.length;
+      } else if (over.id === 'soft-container') {
+         newCategory = 'soft';
+         const lastSoft = skills.map((s, i) => s.category === 'soft' ? i : -1).filter(i => i !== -1).pop();
+         overIndex = lastSoft !== undefined ? lastSoft + 1 : skills.length;
+      } else {
+         newCategory = over.data.current?.category || newCategory;
+      }
+
+      let newSkillsArray = [...skills];
+      if (newSkillsArray[activeIndex].category !== newCategory) {
+        newSkillsArray[activeIndex] = { ...newSkillsArray[activeIndex], category: newCategory };
+      }
+
+      newSkillsArray = arrayMove(newSkillsArray, activeIndex, overIndex);
+      reorderSkills(newSkillsArray);
+    }
   };
 
   return (
@@ -306,15 +397,24 @@ export default function SkillTracker() {
 
       <AnimatePresence>{showForm && <SkillForm onClose={() => setShowForm(false)} />}</AnimatePresence>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <AnimatePresence>
-          {shown.map((skill) => (
-            <SkillCard key={skill._id} skill={skill} onDelete={handleDelete} onToggleTopic={handleToggleTopic} />
-          ))}
-        </AnimatePresence>
-      </div>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        {tab === 'all' ? (
+          <>
+            <CategorySection id="main-container" title="Main Skills" items={mainSkills} handleDelete={handleDelete} handleToggleTopic={handleToggleTopic} />
+            <CategorySection id="soft-container" title="Soft Skills" items={softSkills} handleDelete={handleDelete} handleToggleTopic={handleToggleTopic} />
+          </>
+        ) : (
+          <CategorySection 
+             id={`${tab}-container`} 
+             title="" 
+             items={tab === 'main' ? mainSkills : softSkills} 
+             handleDelete={handleDelete} 
+             handleToggleTopic={handleToggleTopic}
+          />
+        )}
+      </DndContext>
 
-      {shown.length === 0 && !showForm && (
+      {skills.length === 0 && !showForm && (
         <div className="card" style={{ padding: '60px 20px', textAlign: 'center' }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>⚡</div>
           <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>No skills yet</div>

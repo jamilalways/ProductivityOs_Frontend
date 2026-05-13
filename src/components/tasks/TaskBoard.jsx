@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  DndContext, DragOverlay, closestCenter, PointerSensor, useSensor, useSensors, useDroppable,
+  DndContext, DragOverlay, closestCenter, MouseSensor, TouchSensor, KeyboardSensor, useSensor, useSensors, useDroppable,
 } from '@dnd-kit/core';
 import {
-  SortableContext, verticalListSortingStrategy, useSortable,
+  SortableContext, verticalListSortingStrategy, useSortable, arrayMove, sortableKeyboardCoordinates
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Plus, GripVertical, Trash2, Check, Clock, AlertCircle, Loader } from 'lucide-react';
@@ -126,7 +126,11 @@ export default function TaskBoard({ plannerType = 'daily' }) {
   const [addingTo, setAddingTo] = useState(null);
   const [activeId, setActiveId] = useState(null);
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   useEffect(() => { fetchTasks({ plannerType }); }, [plannerType]);
 
@@ -154,20 +158,38 @@ export default function TaskBoard({ plannerType = 'daily' }) {
     setActiveId(null);
     if (!over) return;
 
-    const activeTask = tasks.find((t) => t._id === active.id);
-    if (!activeTask) return;
+    if (active.id !== over.id) {
+      const activeIndex = tasks.findIndex((t) => t._id === active.id);
+      let overIndex = tasks.findIndex((t) => t._id === over.id);
 
-    // Determine target status
-    let targetStatus = over.id;
-    const overTask = tasks.find((t) => t._id === over.id);
-    if (overTask) {
-      targetStatus = overTask.status;
-    }
+      let newStatus = tasks[activeIndex].status;
 
-    // Only update if status changed
-    if (targetStatus !== activeTask.status && COLS.some(c => c.id === targetStatus)) {
-      await updateTask(active.id, { status: targetStatus });
-      toast.success(`Moved to ${targetStatus}`);
+      // Dropping on empty column
+      if (COLS.some((c) => c.id === over.id)) {
+        newStatus = over.id;
+        const colIndices = tasks.map((t, i) => (t.plannerType === plannerType && t.status === newStatus) ? i : -1).filter(i => i !== -1);
+        const lastInCol = colIndices.pop();
+        overIndex = lastInCol !== undefined ? lastInCol + 1 : tasks.length;
+      } else {
+        const overTask = tasks.find((t) => t._id === over.id);
+        if (overTask) {
+          newStatus = overTask.status;
+        }
+      }
+
+      let newTasksArray = [...tasks];
+      let statusChanged = false;
+
+      if (newTasksArray[activeIndex].status !== newStatus) {
+        newTasksArray[activeIndex] = { ...newTasksArray[activeIndex], status: newStatus };
+        statusChanged = true;
+      }
+
+      newTasksArray = arrayMove(newTasksArray, activeIndex, overIndex);
+      
+      if (statusChanged) toast.success(`Moved to ${newStatus}`);
+      
+      await useTaskStore.getState().reorderTasks(newTasksArray);
     }
   };
 

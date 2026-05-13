@@ -15,13 +15,38 @@ export const useNoteStore = create((set) => ({
 
   createNote: async (body) => {
     const { data } = await api.post('/notes', body);
-    set((s) => ({ notes: [data.note, ...s.notes] }));
+    set((s) => {
+      const newNotes = [data.note, ...s.notes];
+      newNotes.sort((a, b) => {
+        if (a.pinned === b.pinned) return new Date(b.date) - new Date(a.date);
+        return a.pinned ? -1 : 1;
+      });
+      return { notes: newNotes };
+    });
     return data.note;
   },
 
   updateNote: async (id, patch) => {
+    // Optimistic update for instant UI feedback when pinning
+    set((s) => {
+      const optimisticNotes = s.notes.map((n) => n._id === id ? { ...n, ...patch } : n);
+      optimisticNotes.sort((a, b) => {
+        if (a.pinned === b.pinned) return new Date(b.date) - new Date(a.date);
+        return a.pinned ? -1 : 1;
+      });
+      return { notes: optimisticNotes };
+    });
+
     const { data } = await api.patch(`/notes/${id}`, patch);
-    set((s) => ({ notes: s.notes.map((n) => n._id === id ? data.note : n) }));
+    
+    set((s) => {
+      const updatedNotes = s.notes.map((n) => n._id === id ? data.note : n);
+      updatedNotes.sort((a, b) => {
+        if (a.pinned === b.pinned) return new Date(b.date) - new Date(a.date);
+        return a.pinned ? -1 : 1;
+      });
+      return { notes: updatedNotes };
+    });
     return data.note;
   },
 

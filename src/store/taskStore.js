@@ -30,7 +30,17 @@ export const useTaskStore = create((set) => ({
     set((s) => ({ tasks: s.tasks.filter((t) => t._id !== id) }));
   },
 
-  reorderTasks: async (taskIds) => {
-    await api.patch('/tasks/reorder', { taskIds });
+  reorderTasks: async (newTasksArray) => {
+    // Optimistically update the entire tasks array in state
+    set({ tasks: newTasksArray });
+    
+    // Map to payload format for backend
+    const payload = newTasksArray.map((t, index) => ({
+      id: t._id,
+      order: index,
+      status: t.status
+    }));
+    
+    await api.patch('/tasks/reorder', { tasks: payload });
   },
 }));
