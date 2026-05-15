@@ -11,7 +11,6 @@ import Tasks      from './pages/Tasks';
 import Skills     from './pages/Skills';
 import Consistency from './pages/Consistency';
 import Notes      from './pages/Notes';
-import Analytics  from './pages/Analytics';
 import Settings   from './pages/Settings';
 import Login      from './pages/Login';
 import Register   from './pages/Register';
@@ -48,7 +47,6 @@ export default function App() {
         <Route path="/skills"     element={<Protected><Skills /></Protected>} />
         <Route path="/consistency" element={<Protected><Consistency /></Protected>} />
         <Route path="/notes"      element={<Protected><Notes /></Protected>} />
-        <Route path="/analytics"  element={<Protected><Analytics /></Protected>} />
         <Route path="/settings"   element={<Protected><Settings /></Protected>} />
         <Route path="*"           element={<Navigate to="/" replace />} />
       </Routes>

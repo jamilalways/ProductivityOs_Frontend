@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion }    from 'framer-motion';
 import { Flame, Target, CheckSquare, Zap, TrendingUp, Trophy } from 'lucide-react';
 import {
@@ -11,18 +11,9 @@ import { useGoalStore }  from '../../store/goalStore';
 import { useSkillStore } from '../../store/skillStore';
 import { greeting }      from '../../utils/dateUtils';
 import { levelTitle, levelProgress, calcLevel } from '../../utils/xp';
-
-const WEEK = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((day, i) => ({
-  day, tasks: Math.floor(Math.random() * 9) + 1, xp: Math.floor(Math.random() * 110) + 30,
-}));
-
-const Tip = ({ active, payload, label }) =>
-  active && payload?.length ? (
-    <div style={{ background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:10, padding:'8px 14px', fontSize:13 }}>
-      <div style={{ fontWeight:600, marginBottom:3 }}>{label}</div>
-      {payload.map((p) => <div key={p.name} style={{ color:p.color }}>{p.name}: {p.value}</div>)}
-    </div>
-  ) : null;
+import PerformanceAnalytics from '../analytics/PerformanceAnalytics';
+import api from '../../utils/api';
+import toast from 'react-hot-toast';
 
 const stagger = { hidden:{ opacity:0 }, show:{ opacity:1, transition:{ staggerChildren:0.07 } } };
 const item    = { hidden:{ opacity:0, y:14 }, show:{ opacity:1, y:0, transition:{ type:'spring', stiffness:260, damping:22 } } };
@@ -32,8 +23,32 @@ export default function DashboardHome() {
   const { tasks,  fetchTasks  }     = useTaskStore();
   const { goals,  fetchGoals  }     = useGoalStore();
   const { skills, fetchSkills }     = useSkillStore();
+  const [analyticsSummary, setAnalyticsSummary] = useState(null);
+  const [period, setPeriod] = useState('weekly');
 
-  useEffect(() => { fetchTasks({ plannerType:'daily' }); fetchGoals(); fetchSkills(); }, []);
+  const loadSummary = async () => {
+    try {
+      const { data } = await api.get(`/analytics?period=weekly`);
+      setAnalyticsSummary(data.summary);
+    } catch (err) {}
+  };
+
+  useEffect(() => { 
+    fetchTasks({ plannerType:'daily' }); 
+    fetchGoals(); 
+    fetchSkills(); 
+    loadSummary();
+  }, []);
+
+  const handleToggleTask = async (task) => {
+    try {
+      const newStatus = task.status === 'done' ? 'todo' : 'done';
+      await useTaskStore.getState().updateTask(task._id, { status: newStatus });
+      if (newStatus === 'done') toast.success('Task completed! +XP');
+    } catch (err) {
+      toast.error('Failed to update task');
+    }
+  };
 
   const todayTasks    = tasks.filter((t) => t.plannerType === 'daily');
   const doneTasks     = todayTasks.filter((t) => t.status === 'done').length;
@@ -44,7 +59,7 @@ export default function DashboardHome() {
   const pct           = levelProgress(xp);
 
   const STATS = [
-    { label:'Day Streak',   value: user?.streak ?? 0,         icon:Flame,       color:'#f59e0b', bg:'rgba(245,158,11,0.12)'  },
+    { label:'Day Streak',   value: analyticsSummary?.currentStreak ?? user?.streak ?? 0, icon:Flame,       color:'#f59e0b', bg:'rgba(245,158,11,0.12)'  },
     { label:'Done Today',   value:`${doneTasks}/${todayTasks.length}`, icon:CheckSquare, color:'#10b981', bg:'rgba(16,185,129,0.12)' },
     { label:'Active Goals', value: activeGoals,                icon:Target,      color:'#8b5cf6', bg:'rgba(139,92,246,0.12)'  },
     { label:'Total XP',     value: xp,                         icon:Zap,         color:'#06b6d4', bg:'rgba(6,182,212,0.12)'   },
@@ -78,43 +93,37 @@ export default function DashboardHome() {
         ))}
       </motion.div>
 
-      {/* ── Charts ── */}
-      <motion.div variants={item} className="grid-2" style={{ marginBottom:20 }}>
-        <div className="card" style={{ padding:'20px 16px' }}>
-          <div style={{ fontWeight:700, fontSize:15, marginBottom:4 }}>Weekly Tasks</div>
-          <div style={{ fontSize:12, color:'var(--text-muted)', marginBottom:16 }}>Completed per day</div>
-          <ResponsiveContainer width="100%" height={150}>
-            <BarChart data={WEEK} barSize={18}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize:11, fill:'var(--text-muted)' }} />
-              <YAxis hide />
-              <Tooltip content={<Tip />} cursor={{ fill:'rgba(255,255,255,0.03)' }} />
-              <Bar dataKey="tasks" fill="#8b5cf6" radius={[6,6,0,0]} />
-            </BarChart>
-          </ResponsiveContainer>
+      {/* ── Performance Section Header ── */}
+      <motion.div variants={item} style={{ 
+        display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', 
+        marginBottom: 20, gap: 16 
+      }}>
+        <div>
+          <h2 style={{ fontWeight: 800, fontSize: 20, margin: 0, letterSpacing: '-0.02em' }}>Performance Analytics</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '2px 0 0' }}>Daily activities performance overview</p>
         </div>
-
-        <div className="card" style={{ padding:'20px 16px' }}>
-          <div style={{ fontWeight:700, fontSize:15, marginBottom:4 }}>XP Trend</div>
-          <div style={{ fontSize:12, color:'var(--text-muted)', marginBottom:16 }}>Experience earned</div>
-          <ResponsiveContainer width="100%" height={150}>
-            <AreaChart data={WEEK}>
-              <defs>
-                <linearGradient id="xg" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="#06b6d4" stopOpacity={0.35} />
-                  <stop offset="95%" stopColor="#06b6d4" stopOpacity={0}    />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize:11, fill:'var(--text-muted)' }} />
-              <YAxis hide />
-              <Tooltip content={<Tip />} />
-              <Area type="monotone" dataKey="xp" stroke="#06b6d4" strokeWidth={2}
-                    fill="url(#xg)" dot={{ fill:'#06b6d4', strokeWidth:0, r:3 }} />
-            </AreaChart>
-          </ResponsiveContainer>
+        <div style={{ 
+          display: 'flex', background: 'var(--bg-card)', borderRadius: 12, padding: 4, gap: 2,
+          border: '1px solid var(--border)'
+        }}>
+          {[
+            { v: 'weekly',    l: 'Last 7' },
+            { v: 'monthly',   l: 'Last 30' },
+            { v: 'quarterly', l: 'Last 90' },
+            { v: 'yearly',    l: 'All Time' },
+          ].map(({ v, l }) => (
+            <button key={v} onClick={() => setPeriod(v)} style={{
+              padding: '8px 16px', borderRadius: 9, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
+              background: period === v ? 'var(--accent-violet)' : 'transparent',
+              color:      period === v ? '#fff' : 'var(--text-secondary)',
+              transition: 'all 0.2s',
+              whiteSpace: 'nowrap'
+            }}>{l}</button>
+          ))}
         </div>
       </motion.div>
+
+      <PerformanceAnalytics period={period} />
 
       {/* ── Skills + Tasks ── */}
       <motion.div variants={item} className="grid-2" style={{ marginBottom:16 }}>
@@ -158,11 +167,19 @@ export default function DashboardHome() {
                 No tasks yet — add some in Tasks ✅
               </div>
             ) : todayTasks.slice(0,6).map((t) => (
-              <div key={t._id} style={{
-                display:'flex', alignItems:'center', gap:10, padding:'9px 12px',
-                borderRadius:10, background:'var(--bg-input)',
-                opacity: t.status === 'done' ? 0.5 : 1,
-              }}>
+              <div 
+                key={t._id} 
+                onClick={() => handleToggleTask(t)}
+                style={{
+                  display:'flex', alignItems:'center', gap:10, padding:'9px 12px',
+                  borderRadius:10, background:'var(--bg-input)',
+                  opacity: t.status === 'done' ? 0.5 : 1,
+                  cursor: 'pointer',
+                  transition: 'transform 0.1s',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.01)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
                 <div style={{
                   width:17, height:17, borderRadius:5, border:'2px solid',
                   borderColor: t.status === 'done' ? '#10b981' : 'var(--border-strong)',
@@ -211,7 +228,7 @@ export default function DashboardHome() {
             </div>
           </div>
           <div className="text-left md:text-right w-full md:w-auto" style={{ flexShrink:0 }}>
-            <div style={{ fontSize:28, fontWeight:800, color:'#f59e0b' }}>{user?.streak ?? 0}</div>
+            <div style={{ fontSize:28, fontWeight:800, color:'#f59e0b' }}>{analyticsSummary?.currentStreak ?? user?.streak ?? 0}</div>
             <div style={{ fontSize:12, color:'var(--text-muted)' }}>day streak 🔥</div>
           </div>
         </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header  from './Header';
+import Footer  from './Footer';
 
 export default function AppLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -24,11 +25,12 @@ export default function AppLayout({ children }) {
         />
       )}
 
-      <div className="page-area">
+      <div className="page-area" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <Header onMenuClick={() => setSidebarOpen(true)} />
-        <main className="content-container">
+        <main className="content-container" style={{ flex: 1 }}>
           {children}
         </main>
+        <Footer />
       </div>
     </div>
   );

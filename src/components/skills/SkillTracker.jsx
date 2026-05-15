@@ -312,6 +312,13 @@ export default function SkillTracker() {
   const { skills, fetchSkills, deleteSkill, toggleTopic, reorderSkills } = useSkillStore();
   const [showForm, setShowForm] = useState(false);
   const [tab, setTab] = useState('all');
+  const [mainHeadline, setMainHeadline] = useState(localStorage.getItem('skills-main-headline') || 'Django . Wordpress . English');
+  const [softHeadline, setSoftHeadline] = useState(localStorage.getItem('skills-soft-headline') || 'ai . merrage . gig . git-github');
+
+  useEffect(() => {
+    localStorage.setItem('skills-main-headline', mainHeadline);
+    localStorage.setItem('skills-soft-headline', softHeadline);
+  }, [mainHeadline, softHeadline]);
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -367,6 +374,87 @@ export default function SkillTracker() {
 
   return (
     <div>
+      {/* Top Center Structured Status Area */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 32 }}>
+        <div style={{ 
+          background: 'var(--bg-card)', 
+          border: '1px solid var(--border)',
+          borderRadius: '16px',
+          padding: '12px 24px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+          width: '100%',
+          maxWidth: '500px',
+          position: 'relative'
+        }}>
+          {/* Main Skills Row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ 
+              fontSize: '11px', fontWeight: 800, color: '#8b5cf6', 
+              textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap'
+            }}>
+              Main Skill Running:
+            </span>
+            <input
+              value={mainHeadline}
+              onChange={(e) => setMainHeadline(e.target.value)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                borderBottom: '1px solid transparent',
+                fontSize: '14px',
+                fontWeight: 600,
+                color: 'var(--text-primary)',
+                outline: 'none',
+                width: '100%',
+                transition: 'all 0.2s',
+              }}
+              onFocus={(e) => e.target.style.borderBottom = '1px solid var(--accent-violet)'}
+              onBlur={(e) => e.target.style.borderBottom = '1px solid transparent'}
+            />
+          </div>
+
+          {/* Soft Skills Row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ 
+              fontSize: '11px', fontWeight: 800, color: '#10b981', 
+              textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap'
+            }}>
+              Soft Skill Running:
+            </span>
+            <input
+              value={softHeadline}
+              onChange={(e) => setSoftHeadline(e.target.value)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                borderBottom: '1px solid transparent',
+                fontSize: '14px',
+                fontWeight: 600,
+                color: 'var(--text-primary)',
+                outline: 'none',
+                width: '100%',
+                transition: 'all 0.2s',
+              }}
+              onFocus={(e) => e.target.style.borderBottom = '1px solid var(--accent-emerald)'}
+              onBlur={(e) => e.target.style.borderBottom = '1px solid transparent'}
+            />
+          </div>
+
+          <div style={{
+            position: 'absolute', top: -6, right: -6,
+            width: 14, height: 14, background: 'var(--bg-card)',
+            border: '1px solid var(--border)', borderRadius: '4px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 9, color: 'var(--text-muted)'
+          }}>
+            ✎
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div style={{ 
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', 

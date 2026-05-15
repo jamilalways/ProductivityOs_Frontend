@@ -14,7 +14,6 @@ const NAV = [
   { to: '/skills',      icon: Zap,             label: 'Skills'    },
   { to: '/consistency', icon: Calendar,        label: 'Consistency'},
   { to: '/notes',       icon: BookOpen,        label: 'Journal'   },
-  { to: '/analytics',   icon: BarChart3,       label: 'Analytics' },
 ];
 
 export default function Sidebar({ isOpen, onClose }) {
