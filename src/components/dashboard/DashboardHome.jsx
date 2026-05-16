@@ -18,13 +18,25 @@ import toast from 'react-hot-toast';
 const stagger = { hidden:{ opacity:0 }, show:{ opacity:1, transition:{ staggerChildren:0.07 } } };
 const item    = { hidden:{ opacity:0, y:14 }, show:{ opacity:1, y:0, transition:{ type:'spring', stiffness:260, damping:22 } } };
 
+const QUOTES = [
+  "Consistency is key",
+  "Focus on progress, not perfection",
+  "Small wins lead to big victories",
+  "Your only limit is you",
+  "Deep work over busy work",
+  "Start where you are. Use what you have",
+  "Productivity is being able to do things that you were never able to do before"
+];
+
 export default function DashboardHome() {
-  const { user }                    = useAuthStore();
+  const { user, saveProfile }      = useAuthStore();
   const { tasks,  fetchTasks  }     = useTaskStore();
   const { goals,  fetchGoals  }     = useGoalStore();
   const { skills, fetchSkills }     = useSkillStore();
   const [analyticsSummary, setAnalyticsSummary] = useState(null);
   const [period, setPeriod] = useState('weekly');
+  const [isEditingMantra, setIsEditingMantra] = useState(false);
+  const [tempMantra, setTempMantra] = useState('');
 
   const loadSummary = async () => {
     try {
@@ -39,6 +51,24 @@ export default function DashboardHome() {
     fetchSkills(); 
     loadSummary();
   }, []);
+
+  const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+  const dailyQuote = QUOTES[dayOfYear % QUOTES.length];
+  const currentMantra = user?.mantra || dailyQuote;
+
+  const handleUpdateMantra = async () => {
+    if (!tempMantra.trim()) {
+      setIsEditingMantra(false);
+      return;
+    }
+    try {
+      await saveProfile({ mantra: tempMantra });
+      toast.success('Mantra updated!');
+    } catch (err) {
+      toast.error('Failed to update mantra');
+    }
+    setIsEditingMantra(false);
+  };
 
   const handleToggleTask = async (task) => {
     try {
@@ -70,14 +100,93 @@ export default function DashboardHome() {
   return (
     <motion.div variants={stagger} initial="hidden" animate="show">
 
-      {/* ── Greeting ── */}
-      <motion.div variants={item} style={{ marginBottom:28 }}>
-        <h1 style={{ fontSize:26, fontWeight:800, margin:0, letterSpacing:'-0.03em' }}>
-          {greeting()}, {user?.name?.split(' ')[0]} 👋
-        </h1>
-        <p style={{ color:'var(--text-muted)', margin:'4px 0 0', fontSize:15 }}>
-          Here's your productivity overview.
-        </p>
+      {/* ── Header ── */}
+      <motion.div variants={item} style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'flex-start',
+        marginBottom: 28,
+        position: 'relative'
+      }}>
+        {/* Left: Greeting */}
+        <div>
+          <h1 style={{ fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: '-0.03em' }}>
+            {greeting()}, {user?.name?.split(' ')[0]} 👋
+          </h1>
+          <p style={{ color: 'var(--text-muted)', margin: '4px 0 0', fontSize: 15 }}>
+            Here's your productivity overview.
+          </p>
+        </div>
+
+        {/* Center: Daily Reminder (Hidden on small screens) */}
+        <div style={{ 
+          position: 'absolute', 
+          left: '50%', 
+          transform: 'translateX(-50%)',
+          textAlign: 'center',
+          width: '100%',
+          maxWidth: '400px',
+          zIndex: 10
+        }} className="hidden md:flex items-center justify-center">
+          <div 
+            onClick={() => {
+              setTempMantra(currentMantra);
+              setIsEditingMantra(true);
+            }}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '20px',
+              background: 'rgba(var(--accent-violet-rgb), 0.05)',
+              border: '1px solid rgba(var(--accent-violet-rgb), 0.1)',
+              backdropFilter: 'blur(4px)',
+              cursor: 'pointer',
+              pointerEvents: 'auto',
+              transition: 'all 0.2s',
+            }}
+            className="hover-scale"
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(var(--accent-violet-rgb), 0.08)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(var(--accent-violet-rgb), 0.05)'}
+          >
+            {isEditingMantra ? (
+              <input
+                autoFocus
+                value={tempMantra}
+                onChange={(e) => setTempMantra(e.target.value)}
+                onBlur={handleUpdateMantra}
+                onKeyDown={(e) => e.key === 'Enter' && handleUpdateMantra()}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--accent-violet)',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  textAlign: 'center',
+                  outline: 'none',
+                  width: '100%',
+                  fontStyle: 'italic'
+                }}
+              />
+            ) : (
+              <p style={{ 
+                fontSize: 13, 
+                fontWeight: 600, 
+                margin: 0, 
+                color: 'var(--accent-violet)',
+                letterSpacing: '0.02em',
+                fontStyle: 'italic'
+              }}>
+                "{currentMantra}"
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Right: Date (Hidden on mobile) */}
+        <div className="hidden md:block text-right">
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+          </div>
+        </div>
       </motion.div>
 
       {/* ── Stat Cards ── */}

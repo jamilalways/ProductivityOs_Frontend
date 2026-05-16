@@ -28,6 +28,12 @@ export const useAuthStore = create(
       },
 
       updateUser: (patch) => set((s) => ({ user: { ...s.user, ...patch } })),
+      
+      saveProfile: async (patch) => {
+        const { data } = await api.patch('/auth/update', patch);
+        set({ user: data.user });
+        return data.user;
+      },
     }),
     { name: 'auth' }
   )
