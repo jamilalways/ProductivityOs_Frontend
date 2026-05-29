@@ -19,6 +19,29 @@ function GoalCard({ goal, onDelete, onUpdate }) {
   const over   = isOverdue(goal.deadline) && goal.status !== 'completed';
   const { icon: StatusIcon, color: statusColor, label: statusLabel } = STATUS_META[goal.status] || STATUS_META.active;
 
+  const handleToggleMilestone = async (milestoneId) => {
+    if (!goal.milestones) return;
+    const updatedMilestones = goal.milestones.map((m) =>
+      m._id === milestoneId ? { ...m, completed: !m.completed } : m
+    );
+    const completedCount = updatedMilestones.filter((m) => m.completed).length;
+    const totalCount = updatedMilestones.length;
+    const newProgress = Math.round((completedCount / totalCount) * 100);
+
+    let newStatus = goal.status;
+    if (newProgress === 100) {
+      newStatus = 'completed';
+    } else if (goal.status === 'completed' && newProgress < 100) {
+      newStatus = 'active';
+    }
+
+    await onUpdate(goal._id, {
+      milestones: updatedMilestones,
+      progress: newProgress,
+      status: newStatus
+    });
+  };
+
   return (
     <motion.div
       className="card"
@@ -89,10 +112,16 @@ function GoalCard({ goal, onDelete, onUpdate }) {
           />
         </div>
         {/* Progress slider */}
-        <input type="range" min={0} max={100} value={goal.progress}
-          onChange={(e) => onUpdate(goal._id, { progress: Number(e.target.value) })}
-          style={{ width:'100%', marginTop:8, accentColor: goal.color, cursor:'pointer' }}
-        />
+        {(!goal.milestones || goal.milestones.length === 0) ? (
+          <input type="range" min={0} max={100} value={goal.progress}
+            onChange={(e) => onUpdate(goal._id, { progress: Number(e.target.value) })}
+            style={{ width:'100%', marginTop:8, accentColor: goal.color, cursor:'pointer' }}
+          />
+        ) : (
+          <div style={{ fontSize:11, color:'var(--text-muted)', marginTop:6, fontStyle:'italic' }}>
+            Progress auto-tracked via milestones
+          </div>
+        )}
       </div>
 
       {/* Deadline */}
@@ -114,20 +143,64 @@ function GoalCard({ goal, onDelete, onUpdate }) {
           <div style={{ fontSize:12, color:'var(--text-muted)', marginBottom:8, fontWeight:600 }}>
             Milestones ({goal.milestones.filter(m=>m.completed).length}/{goal.milestones.length})
           </div>
-          <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+          <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
             {goal.milestones.map((m) => (
-              <div key={m._id} style={{ display:'flex', alignItems:'center', gap:8, fontSize:13 }}>
+              <div
+                key={m._id}
+                onClick={() => handleToggleMilestone(m._id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  padding: '6px 8px',
+                  borderRadius: 8,
+                  background: 'transparent',
+                  transition: 'background 0.2s, transform 0.1s',
+                }}
+                className="hover-scale"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--bg-input)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
+              >
                 <div style={{
-                  width:16, height:16, borderRadius:4, border:'1.5px solid',
-                  borderColor: m.completed ? '#10b981' : 'var(--border-strong)',
-                  background:  m.completed ? '#10b981' : 'transparent',
-                  display:'flex', alignItems:'center', justifyContent:'center',
-                  flexShrink:0, fontSize:10, color:'#fff',
+                  width: 17,
+                  height: 17,
+                  borderRadius: 5,
+                  border: '1.5px solid',
+                  borderColor: m.completed ? goal.color : 'var(--border-strong)',
+                  background: m.completed ? goal.color : 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  fontSize: 10,
+                  color: '#fff',
+                  transition: 'all 0.2s ease',
+                  boxShadow: m.completed ? `0 2px 8px ${goal.color}40` : 'none',
                 }}>
-                  {m.completed && '✓'}
+                  {m.completed && (
+                    <motion.span
+                      initial={{ scale: 0, rotate: -20 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                    >
+                      ✓
+                    </motion.span>
+                  )}
                 </div>
-                <span style={{ opacity: m.completed ? 0.5 : 1,
-                  textDecoration: m.completed ? 'line-through' : 'none' }}>
+                <span style={{
+                  opacity: m.completed ? 0.45 : 0.9,
+                  textDecoration: m.completed ? 'line-through' : 'none',
+                  transition: 'opacity 0.2s, color 0.2s',
+                  color: m.completed ? 'var(--text-muted)' : 'var(--text-primary)',
+                  fontWeight: 500,
+                  userSelect: 'none',
+                }}>
                   {m.title}
                 </span>
               </div>
