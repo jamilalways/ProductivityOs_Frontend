@@ -29,4 +29,13 @@ export const useHabitStore = create((set) => ({
     await api.delete(`/habits/${id}`);
     set((s) => ({ habits: s.habits.filter((h) => h._id !== id) }));
   },
+
+  reorderHabits: async (newHabitsArray) => {
+    set({ habits: newHabitsArray });
+    const payload = newHabitsArray.map((h, index) => ({
+      id: h._id,
+      order: index
+    }));
+    await api.patch('/habits/reorder', { habits: payload });
+  },
 }));
