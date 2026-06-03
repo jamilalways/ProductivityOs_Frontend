@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
 import { Plus, Trash2, ChevronDown, ChevronRight, Check, GripVertical } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, MouseSensor, TouchSensor, useSensor, useSensors, useDroppable } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
@@ -68,12 +69,29 @@ function SkillCard({ skill, onDelete, onToggleTopic, dragHandleProps }) {
   const { updateSkill } = useSkillStore();
   const pct = skill.progressPercentage ?? 0;
 
+  const [isEditingDesc, setIsEditingDesc] = useState(false);
+  const [descValue, setDescValue] = useState(skill.description || '');
+
+  useEffect(() => {
+    setDescValue(skill.description || '');
+  }, [skill.description]);
+
   const addTopic = async () => {
     if (!newTopic.trim()) return;
     const updated = [...skill.topics, { name: newTopic }];
     await updateSkill(skill._id, { topics: updated });
     setNewTopic('');
     toast.success('Topic added!');
+  };
+
+  const handleSaveDesc = async () => {
+    try {
+      await updateSkill(skill._id, { description: descValue });
+      setIsEditingDesc(false);
+      toast.success('Description updated!');
+    } catch (err) {
+      toast.error('Failed to update description');
+    }
   };
 
   return (
@@ -137,7 +155,7 @@ function SkillCard({ skill, onDelete, onToggleTopic, dragHandleProps }) {
         </div>
       </div>
 
-      {/* Topics accordion */}
+      {/* Accordion content */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -147,38 +165,143 @@ function SkillCard({ skill, onDelete, onToggleTopic, dragHandleProps }) {
             transition={{ duration: 0.25 }}
             style={{ overflow: 'hidden', borderTop: '1px solid var(--border)' }}
           >
-            <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 7 }}>
-              {skill.topics.length === 0 && (
-                <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, padding: '10px 0' }}>
-                  No topics yet. Add your first one below.
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 18,
+              padding: '20px',
+            }}>
+              {/* Description & Resources Section (Top) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.05em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    Description & Resources
+                  </span>
+                  {!isEditingDesc && (
+                    <button
+                      onClick={() => setIsEditingDesc(true)}
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: 'var(--accent-violet)', fontSize: 11, fontWeight: 700,
+                        padding: '2px 6px', borderRadius: 4, transition: 'background 0.2s',
+                        textTransform: 'uppercase'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'var(--accent-violet-muted)'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                    >
+                      Edit
+                    </button>
+                  )}
                 </div>
-              )}
-              {skill.topics.map((topic) => (
-                <TopicRow
-                  key={topic._id}
-                  topic={topic}
-                  onToggle={() => onToggleTopic(skill._id, topic._id)}
-                  onDelete={() => {
-                    const { deleteTopic } = useSkillStore.getState();
-                    deleteTopic(skill._id, topic._id);
-                    toast.success('Topic deleted');
-                  }}
-                />
-              ))}
 
-              {/* Add topic */}
-              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                <input
-                  className="input"
-                  value={newTopic}
-                  onChange={(e) => setNewTopic(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && addTopic()}
-                  placeholder="Add topic… (Enter)"
-                  style={{ flex: 1 }}
-                />
-                <button className="btn-primary" onClick={addTopic} style={{ padding: '9px 14px' }}>
-                  <Plus size={14} />
-                </button>
+                {isEditingDesc ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <textarea
+                      className="input"
+                      style={{
+                        minHeight: 100,
+                        resize: 'vertical',
+                        lineHeight: 1.6,
+                        fontFamily: 'inherit',
+                        fontSize: 13,
+                      }}
+                      value={descValue}
+                      onChange={(e) => setDescValue(e.target.value)}
+                      placeholder="Write guidelines, study logs, documentation links, or bookmarks in Markdown format here..."
+                    />
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        className="btn-primary"
+                        onClick={handleSaveDesc}
+                        style={{ padding: '6px 14px', fontSize: 12 }}
+                      >
+                        Save
+                      </button>
+                      <button
+                        className="btn-ghost"
+                        onClick={() => {
+                          setDescValue(skill.description || '');
+                          setIsEditingDesc(false);
+                        }}
+                        style={{ padding: '6px 14px', fontSize: 12 }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => setIsEditingDesc(true)}
+                    style={{
+                      background: 'var(--bg-input)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 10,
+                      padding: '12px 14px',
+                      fontSize: 13,
+                      minHeight: 90,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      lineHeight: 1.6
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--border-strong)'}
+                    onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
+                  >
+                    {skill.description ? (
+                      <div style={{ color: 'var(--text-primary)' }} className="markdown-preview">
+                        <ReactMarkdown>{skill.description}</ReactMarkdown>
+                      </div>
+                    ) : (
+                      <div style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: 12, display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%', minHeight: 60, textAlign: 'center' }}>
+                        <div>✍️ Click to add resource descriptions, links, guides, or bookmarks for this skill.</div>
+                        <div style={{ fontSize: 10, marginTop: 4 }}>Supports Markdown syntax</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Divider */}
+              <div style={{ borderTop: '1px solid var(--border)' }} />
+
+              {/* Topics Checklist Section (Bottom) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.05em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  Topics Checklist
+                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                  {skill.topics.length === 0 && (
+                    <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, padding: '10px 0' }}>
+                      No topics yet. Add your first one below.
+                    </div>
+                  )}
+                  {skill.topics.map((topic) => (
+                    <TopicRow
+                      key={topic._id}
+                      topic={topic}
+                      onToggle={() => onToggleTopic(skill._id, topic._id)}
+                      onDelete={() => {
+                        const { deleteTopic } = useSkillStore.getState();
+                        deleteTopic(skill._id, topic._id);
+                        toast.success('Topic deleted');
+                      }}
+                    />
+                  ))}
+
+                  {/* Add topic */}
+                  <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                    <input
+                      className="input"
+                      value={newTopic}
+                      onChange={(e) => setNewTopic(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && addTopic()}
+                      placeholder="Add topic… (Enter)"
+                      style={{ flex: 1 }}
+                    />
+                    <button className="btn-primary" onClick={addTopic} style={{ padding: '9px 14px' }}>
+                      <Plus size={14} />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -190,7 +313,7 @@ function SkillCard({ skill, onDelete, onToggleTopic, dragHandleProps }) {
 
 function SkillForm({ onClose }) {
   const { createSkill } = useSkillStore();
-  const [form, setForm] = useState({ name: '', category: 'main', icon: '💡', color: '#8b5cf6' });
+  const [form, setForm] = useState({ name: '', category: 'main', icon: '💡', color: '#8b5cf6', description: '' });
   const [loading, setLoading] = useState(false);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -224,6 +347,17 @@ function SkillForm({ onClose }) {
             <option value="soft">Soft Skill</option>
           </select>
         </div>
+      </div>
+
+      <div style={{ marginBottom: 14 }}>
+        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: 'var(--text-muted)' }}>DESCRIPTION & RESOURCES (OPTIONAL)</label>
+        <textarea
+          className="input"
+          value={form.description}
+          onChange={(e) => set('description', e.target.value)}
+          placeholder="e.g. Documentation links, books, videos, guides, learning path..."
+          style={{ height: 80, resize: 'vertical', lineHeight: 1.5, fontFamily: 'inherit' }}
+        />
       </div>
 
       <div style={{ marginBottom: 14 }}>
